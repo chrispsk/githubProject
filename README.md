@@ -1,6 +1,7 @@
 # githubProject
 small library that can ingest unlimited amounts of data from GitHub
-Description
+
+Description:
 You will build an class that streams batches of data from GitHub out to the caller (the user of your object).
 
 The class will operate as a stream, or an iterable - such that every call to get more data, produces only a portion of that data (as the actual data can be arbitrarily large).
