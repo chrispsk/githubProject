@@ -33,31 +33,47 @@ The resources in the input must be a subset of the support resources, meaning yo
 
 For each resource make sure you iterate on all the pages of the result (it can be more than a single request) - but don’t read all pages in a single call to read, instead, every call should fetch the next page until the resource is depleted, then move on to the next resource and/or next repository.
 
+
 When there is no more data to return, return None
 
-Example
+
+Example:
+
 If the input is:
+
 owner=”moby”
+
 repositories=[‘moby’,’buildkit, ‘tool’]
+
 resources=[‘issues’, ‘commits’, ‘pull_requests’]
+
 
 As we call read repeatedly, it will return all the issues, commits & pull requests for the repositories at moby/moby, moby/buildkit, moby/tool (no particular order, see notes)
 
 Usage
 Your class will be used in a manner similar to the sample below:
 
+
 gh = GitHub(arguments)
 
+
 data = gh.read()
+
 while data is not None:
+
     # do something with the data
+
     data = gh.read() # fetch next batch
 
-Notes
+
+Notes:
+
 Order of iteration is not important for this assignment.
 No need to perform input validation (you can if you want to, but it’s not a requirement for the task)
 Don’t use any existing github library/SDK, make direct calls to the API
 We only care for reading data from github, not writing to it.
 
+
 What Are We Looking For?
+
 We are trying to estimate your optimal code quality and have a peek at your thought process. All this without time limitations, or (too many) restrictive conditions, so please follow best practices. Consider conventions, comments, documentation, and tests. We wish this to be built by the same quality standards you'd like to see in your production code, so consider Network issues, Error handling and recovery when possible, Consider the API rate limit, etc. 
