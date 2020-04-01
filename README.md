@@ -9,6 +9,7 @@ The class will operate as a stream, or an iterable - such that every call to get
 The class will enable it’s user to get multiple types of data on multiple repositories owned by the same owner/organization using a single API
 
 Requirements:
+
 Implement a single class, called GitHub
 
 The class constructor is initiated using three variables
