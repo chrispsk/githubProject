@@ -1,89 +1,88 @@
+import os
 import requests
-################# ADD TOKEN ###########################
-token = '' # here add your token
-header = dict()
-if token:
-    header['Authorization'] = 'Token {}'.format(token)
-#########################################################
 
 
 class GitHub:
+    def __init__(self, owner, repos, resources):
+        self.owner = owner
+        self.repos = repos
+        self.resources = resources
+        self.page = 1
+        self.headers = self._build_headers()
 
-    def __init__(self, owner, repo, resources):
-        self.__owner = owner
-        self.__repo = repo
-        self.__resources = resources
-        self.counter = 1
+    def _build_headers(self):
+        token = os.environ.get("GITHUB_TOKEN")
 
-    @property
-    def owner(self):
-        return self.__owner
+        if token:
+            return {
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/vnd.github+json",
+            }
 
-    @property
-    def repo(self):
-        return self.__repo
+        return {
+            "Accept": "application/vnd.github+json",
+        }
 
-    @property
-    def resources(self):
-        return self.__resources
+    def _get(self, url):
+        response = requests.get(url, headers=self.headers, timeout=10)
 
-    def sha_commit(self, jso):
-        abc = list() # save all sha for this page
-        for x in jso:
-            abc.append(x['sha'])
-        return abc
+        if response.status_code != 200:
+            return None
 
-    def get_sha_commits(self, repos, response):
-        abc = list() # save all sha for this page
-        for x in response.json():
-            abc.append(x['sha'])
-        
-        evr = dict()
-        for i,val in enumerate(abc):
-                sha_url = 'https://api.github.com/repos/{user}/{repo}/commits/{sha}'.format(
-                    user=self.owner,
-                    repo=repos,
-                    sha=val
+        data = response.json()
+
+        if not data:
+            return None
+
+        return data
+
+    def get_commit_messages(self, repo, commits):
+        commit_messages = {}
+
+        for commit in commits:
+            sha = commit.get("sha")
+            message = commit.get("commit", {}).get("message")
+
+            if sha and message:
+                commit_url = (
+                    f"https://api.github.com/repos/"
+                    f"{self.owner}/{repo}/commits/{sha}"
                 )
-                comi_sha = requests.get(sha_url, headers=header)
-                if comi_sha.status_code == 200 and comi_sha.json():
-                    #evr[sha_url] = response.json()[i]['sha']
-                    evr[sha_url] = response.json()[i]['commit']['message']
-        return evr
-            
+                commit_messages[commit_url] = message
+
+        return commit_messages
 
     def read(self):
-        bucket = dict()
-        for repos in self.repo:
-            resource_dict = dict()
-            for res in self.resources:
-                url = 'https://api.github.com/repos/{user}/{repo}/{resource}?page={page}'.format(
-                        user=self.owner,
-                        repo=repos,
-                        resource=res,
-                        page=self.counter
-                    )
-                response = requests.get(url, headers=header)
-                if response.status_code==200 and response.json():
-                    if res == "commits": # special case for commits
-                        evr = self.get_sha_commits(repos,response)
-                        
-                        resource_dict["commits"] = {
-                                'url': url,
-                                'data': evr
-                            }
-                    else:
-                        resource_dict[res] = {
-                                'url': url,
-                                'data': response.json()
-                            }
-            if resource_dict: # add to bucket only if hasmore data
-                bucket[repos] = resource_dict
-        
-        self.counter += 1 # next page
+        bucket = {}
 
-        if bucket: # return the bucket if has any data or None
-            return bucket
-        else:
-            return None 
+        for repo in self.repos:
+            resource_data = {}
 
+            for resource in self.resources:
+                url = (
+                    f"https://api.github.com/repos/"
+                    f"{self.owner}/{repo}/{resource}?page={self.page}"
+                )
+
+                data = self._get(url)
+
+                if not data:
+                    continue
+
+                if resource == "commits":
+                    resource_data[resource] = {
+                        "url": url,
+                        "data": self.get_commit_messages(repo, data),
+                    }
+                else:
+                    resource_data[resource] = {
+                        "url": url,
+                        "data": data,
+                    }
+
+            if resource_data:
+                bucket[repo] = resource_data
+
+        self.page += 1
+
+        return bucket if bucket else None
