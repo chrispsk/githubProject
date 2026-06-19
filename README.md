@@ -34,24 +34,30 @@ pip install -r requirements.txt
 
 Run the script:
 
+```bash
 python driver.py
+```
 
 By default, the script reads data from:
 
+```python
 owner = "moby"
 repos = ["buildkit", "tool"]
 resources = ["issues", "commits", "pulls"]
+```
 
-The read() method returns one page of data at a time.
-When there is no more data to read, it returns None.
+The `read()` method returns one page of data at a time.  
+When there is no more data to read, it returns `None`.
 
 Example flow:
 
+```python
 data = github_client.read()
 
 while data is not None:
     print(data)
     data = github_client.read()
+```
 
 ## GitHub Token
 
